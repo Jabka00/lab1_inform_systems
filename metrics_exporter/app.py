@@ -5,7 +5,7 @@ from datetime import datetime
 import mysql.connector
 from mysql.connector import Error
 from flask import Flask, Response
-from prometheus_client import Counter, Gauge, Histogram, generate_latest, CONTENT_TYPE_LATEST
+from prometheus_client import Counter, Gauge, generate_latest, CONTENT_TYPE_LATEST
 import threading
 
 # Налаштування логування
@@ -17,23 +17,20 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
-# Prometheus метрики
-# Лічильники
-db_queries_total = Counter('mysql_queries_total', 'Total number of database queries', ['query_type'])
-db_connections_total = Counter('mysql_connections_total', 'Total number of database connections')
-user_registrations_total = Counter('user_registrations_total', 'Total number of user registrations')
-orders_total = Counter('orders_total', 'Total number of orders', ['status'])
+# Prometheus метрики - простіші та зрозуміліші
+# Основні гейджі
+mysql_active_users = Gauge('mysql_active_users', 'Number of active users')
+mysql_total_users = Gauge('mysql_total_users', 'Total number of users')
+mysql_total_products = Gauge('mysql_total_products', 'Total number of products')
+mysql_pending_orders = Gauge('mysql_pending_orders', 'Number of pending orders')
+mysql_total_revenue = Gauge('mysql_total_revenue', 'Total revenue from completed orders')
 
-# Гейджи (поточні значення)
-active_users = Gauge('active_users_count', 'Number of active users')
-total_users = Gauge('total_users_count', 'Total number of users')
-total_products = Gauge('total_products_count', 'Total number of products')
-low_stock_products = Gauge('low_stock_products_count', 'Number of products with low stock')
-pending_orders = Gauge('pending_orders_count', 'Number of pending orders')
-total_revenue = Gauge('total_revenue', 'Total revenue from completed orders')
+# Лічильники активності
+mysql_operations_total = Counter('mysql_operations_total', 'Total database operations')
+mysql_orders_per_minute = Gauge('mysql_orders_per_minute', 'Orders created in last minute')
 
-# Гістограми
-query_duration = Histogram('mysql_query_duration_seconds', 'Time spent on database queries', ['query_type'])
+# Простий час запитів
+mysql_avg_query_time = Gauge('mysql_avg_query_time', 'Average query execution time in seconds')
 
 class MetricsExporter:
     def __init__(self):
@@ -68,7 +65,7 @@ class MetricsExporter:
         logger.error("Не вдалося підключитися до MySQL після всіх спроб")
         raise Exception("Не вдалося підключитися до MySQL")
     
-    def execute_query(self, query, query_type="select"):
+    def execute_query(self, query):
         """Виконання запиту з підрахунком метрик"""
         start_time = time.time()
         
@@ -76,12 +73,12 @@ class MetricsExporter:
             self.cursor.execute(query)
             result = self.cursor.fetchall()
             
-            # Збільшуємо лічильник запитів
-            db_queries_total.labels(query_type=query_type).inc()
+            # Збільшуємо лічильник операцій
+            mysql_operations_total.inc()
             
-            # Записуємо час виконання
+            # Записуємо середній час виконання
             duration = time.time() - start_time
-            query_duration.labels(query_type=query_type).observe(duration)
+            mysql_avg_query_time.set(duration)
             
             return result
             
@@ -89,88 +86,44 @@ class MetricsExporter:
             logger.error(f"Помилка виконання запиту: {e}")
             return []
     
-    def collect_user_metrics(self):
-        """Збір метрик користувачів"""
-        try:
-            # Загальна кількість користувачів
-            result = self.execute_query("SELECT COUNT(*) FROM users", "count_users")
-            if result:
-                total_users.set(result[0][0])
-            
-            # Активні користувачі
-            result = self.execute_query("SELECT COUNT(*) FROM users WHERE status = 'active'", "count_active_users")
-            if result:
-                active_users.set(result[0][0])
-            
-            # Нові реєстрації за останню годину
-            result = self.execute_query("""
-                SELECT COUNT(*) FROM users 
-                WHERE created_at >= DATE_SUB(NOW(), INTERVAL 1 HOUR)
-            """, "new_registrations")
-            
-            if result:
-                user_registrations_total.inc(result[0][0])
-            
-        except Exception as e:
-            logger.error(f"Помилка збору метрик користувачів: {e}")
-    
-    def collect_product_metrics(self):
-        """Збір метрик продуктів"""
-        try:
-            # Загальна кількість продуктів
-            result = self.execute_query("SELECT COUNT(*) FROM products", "count_products")
-            if result:
-                total_products.set(result[0][0])
-            
-            # Продукти з низьким запасом (менше 10)
-            result = self.execute_query("SELECT COUNT(*) FROM products WHERE stock_quantity < 10", "low_stock")
-            if result:
-                low_stock_products.set(result[0][0])
-            
-        except Exception as e:
-            logger.error(f"Помилка збору метрик продуктів: {e}")
-    
-    def collect_order_metrics(self):
-        """Збір метрик замовлень"""
-        try:
-            # Замовлення за статусом
-            statuses = ['pending', 'processing', 'completed', 'cancelled']
-            for status in statuses:
-                result = self.execute_query(f"SELECT COUNT(*) FROM orders WHERE status = '{status}'", f"count_orders_{status}")
-                if result:
-                    if status == 'pending':
-                        pending_orders.set(result[0][0])
-                    orders_total.labels(status=status).inc(result[0][0])
-            
-            # Загальний дохід від завершених замовлень
-            result = self.execute_query("SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE status = 'completed'", "revenue")
-            if result:
-                total_revenue.set(float(result[0][0]))
-            
-        except Exception as e:
-            logger.error(f"Помилка збору метрик замовлень: {e}")
-    
-    def collect_database_metrics(self):
-        """Збір загальних метрик бази даних"""
-        try:
-            # Кількість підключень
-            result = self.execute_query("SHOW STATUS LIKE 'Threads_connected'", "connections")
-            if result:
-                db_connections_total.inc()
-            
-            # Додаткові метрики MySQL можна додати тут
-            
-        except Exception as e:
-            logger.error(f"Помилка збору метрик БД: {e}")
-    
     def collect_all_metrics(self):
         """Збір всіх метрик"""
-        logger.info("Збір метрик...")
-        self.collect_user_metrics()
-        self.collect_product_metrics()
-        self.collect_order_metrics()
-        self.collect_database_metrics()
-        logger.info("Метрики зібрано")
+        try:
+            logger.info("Збір метрик...")
+            
+            # Користувачі
+            result = self.execute_query("SELECT COUNT(*) FROM users")
+            if result:
+                mysql_total_users.set(result[0][0])
+            
+            result = self.execute_query("SELECT COUNT(*) FROM users WHERE status = 'active'")
+            if result:
+                mysql_active_users.set(result[0][0])
+            
+            # Продукти
+            result = self.execute_query("SELECT COUNT(*) FROM products")
+            if result:
+                mysql_total_products.set(result[0][0])
+            
+            # Замовлення
+            result = self.execute_query("SELECT COUNT(*) FROM orders WHERE status = 'pending'")
+            if result:
+                mysql_pending_orders.set(result[0][0])
+            
+            # Дохід
+            result = self.execute_query("SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE status = 'completed'")
+            if result:
+                mysql_total_revenue.set(float(result[0][0]))
+            
+            # Замовлення за останню хвилину
+            result = self.execute_query("SELECT COUNT(*) FROM orders WHERE order_date >= DATE_SUB(NOW(), INTERVAL 1 MINUTE)")
+            if result:
+                mysql_orders_per_minute.set(result[0][0])
+            
+            logger.info("Метрики зібрано")
+            
+        except Exception as e:
+            logger.error(f"Помилка збору метрик: {e}")
     
     def run_metrics_collection(self):
         """Безперервний збір метрик"""

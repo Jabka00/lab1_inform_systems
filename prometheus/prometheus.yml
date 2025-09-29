@@ -12,23 +12,10 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9090']
 
-  # MySQL Exporter
-  - job_name: 'mysql'
-    static_configs:
-      - targets: ['mysql_exporter:9104']
-    scrape_interval: 10s
-    scrape_timeout: 5s
-
-  # Custom metrics exporter
-  - job_name: 'custom-mysql-metrics'
+  # Custom MySQL metrics exporter
+  - job_name: 'mysql-metrics'
     static_configs:
       - targets: ['metrics_exporter:8000']
-    scrape_interval: 10s
-    scrape_timeout: 5s
-
-  # Auth service metrics (if implemented)
-  - job_name: 'auth-service'
-    static_configs:
-      - targets: ['auth_service:5000']
-    scrape_interval: 30s
+    scrape_interval: 15s
+    scrape_timeout: 10s
     metrics_path: '/metrics'

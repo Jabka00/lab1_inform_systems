@@ -90,13 +90,13 @@
       },
       "targets": [
         {
-          "expr": "total_users_count",
+          "expr": "mysql_total_users",
           "interval": "",
           "legendFormat": "Загальна кількість користувачів",
           "refId": "A"
         },
         {
-          "expr": "active_users_count",
+          "expr": "mysql_active_users",
           "interval": "",
           "legendFormat": "Активні користувачі",
           "refId": "B"
@@ -177,16 +177,10 @@
       },
       "targets": [
         {
-          "expr": "total_products_count",
+          "expr": "mysql_total_products",
           "interval": "",
           "legendFormat": "Загальна кількість продуктів",
           "refId": "A"
-        },
-        {
-          "expr": "low_stock_products_count",
-          "interval": "",
-          "legendFormat": "Продукти з низьким запасом",
-          "refId": "B"
         }
       ],
       "title": "Статистика продуктів",
@@ -264,15 +258,15 @@
       },
       "targets": [
         {
-          "expr": "pending_orders_count",
+          "expr": "mysql_pending_orders",
           "interval": "",
           "legendFormat": "Очікуючі замовлення",
           "refId": "A"
         },
         {
-          "expr": "rate(orders_total[5m])",
+          "expr": "mysql_orders_per_minute",
           "interval": "",
-          "legendFormat": "Швидкість створення замовлень",
+          "legendFormat": "Замовлення за хвилину",
           "refId": "B"
         }
       ],
@@ -328,7 +322,7 @@
       "pluginVersion": "8.0.0",
       "targets": [
         {
-          "expr": "total_revenue",
+          "expr": "mysql_total_revenue",
           "interval": "",
           "legendFormat": "Загальний дохід",
           "refId": "A"
@@ -409,94 +403,19 @@
       },
       "targets": [
         {
-          "expr": "rate(mysql_query_duration_seconds_sum[5m]) / rate(mysql_query_duration_seconds_count[5m])",
+          "expr": "mysql_avg_query_time",
           "interval": "",
-          "legendFormat": "Середній час запитів",
+          "legendFormat": "Середній час запиту",
           "refId": "A"
-        }
-      ],
-      "title": "Продуктивність запитів",
-      "type": "timeseries"
-    },
-    {
-      "datasource": "Prometheus",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "vis": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "reqps"
         },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 16
-      },
-      "id": 6,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single"
-        }
-      },
-      "targets": [
         {
-          "expr": "rate(mysql_queries_total[5m])",
+          "expr": "rate(mysql_operations_total[1m])",
           "interval": "",
-          "legendFormat": "Запити до БД за секунду",
-          "refId": "A"
+          "legendFormat": "Операції за секунду",
+          "refId": "B"
         }
       ],
-      "title": "Навантаження на БД",
+      "title": "Продуктивність БД",
       "type": "timeseries"
     }
   ],

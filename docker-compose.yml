@@ -53,31 +53,6 @@ services:
     networks:
       - monitoring-network
 
-  mysql_exporter:
-    image: prom/mysqld-exporter:latest
-    container_name: mysql_exporter
-    restart: unless-stopped
-    ports:
-      - "9104:9104"
-    environment:
-      DATA_SOURCE_NAME: "monitor_user:monitor_pass@tcp(mysql:3306)/monitoring_db"
-    depends_on:
-      - mysql
-    networks:
-      - monitoring-network
-
-  auth_service:
-    build:
-      context: ./auth
-      dockerfile: Dockerfile
-    container_name: auth_service
-    restart: unless-stopped
-    ports:
-      - "5000:5000"
-    volumes:
-      - auth_db:/app
-    networks:
-      - monitoring-network
 
   data_generator:
     build:
@@ -119,7 +94,6 @@ volumes:
   mysql_data:
   prometheus_data:
   grafana_data:
-  auth_db:
 
 networks:
   monitoring-network:
