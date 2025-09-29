@@ -1,0 +1,33 @@
+[mysqld]
+# Enable slow query log
+slow_query_log = 1
+slow_query_log_file = /var/lib/mysql/slow.log
+long_query_time = 1
+
+# Enable general log
+general_log = 1
+general_log_file = /var/lib/mysql/general.log
+
+# Enable binary log
+log-bin = mysql-bin
+server-id = 1
+
+# Performance Schema
+performance_schema = ON
+
+# Enable metrics for monitoring
+innodb_monitor_enable = all
+
+# Connection settings
+max_connections = 200
+max_connect_errors = 100
+
+# Buffer settings
+innodb_buffer_pool_size = 256M
+key_buffer_size = 64M
+tmp_table_size = 64M
+max_heap_table_size = 64M
+
+# Query cache (deprecated in MySQL 8.0 but good for learning)
+# query_cache_type = 1
+# query_cache_size = 64M

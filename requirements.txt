@@ -1,0 +1,9 @@
+# Загальні залежності для всього проекту
+mysql-connector-python==8.1.0
+flask==2.3.3
+prometheus-client==0.17.1
+PyJWT==2.8.0
+
+# Для розробки та тестування
+pytest==7.4.0
+requests==2.31.0
