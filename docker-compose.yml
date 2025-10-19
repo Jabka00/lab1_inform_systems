@@ -90,10 +90,30 @@ services:
     networks:
       - monitoring-network
 
+  auth_server:
+    build:
+      context: ./auth_server
+      dockerfile: Dockerfile
+    container_name: auth_server
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      SECRET_KEY: "your-secret-key-change-in-production"
+      JWT_SECRET: "your-jwt-secret-change-in-production"
+      ADMIN_PASSWORD: "admin123"
+      GRAFANA_URL: "http://localhost:3000"
+      PROMETHEUS_URL: "http://localhost:9090"
+    volumes:
+      - auth_data:/app/data
+    networks:
+      - monitoring-network
+
 volumes:
   mysql_data:
   prometheus_data:
   grafana_data:
+  auth_data:
 
 networks:
   monitoring-network:
