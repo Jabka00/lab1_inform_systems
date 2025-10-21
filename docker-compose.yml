@@ -15,6 +15,12 @@ services:
       - ./config/mysql.cnf:/etc/mysql/conf.d/mysql.cnf
     networks:
       - monitoring-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "monitor_user", "-pmonitor_pass"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
   prometheus:
     image: prom/prometheus:latest
@@ -59,7 +65,8 @@ services:
     container_name: data_generator
     restart: unless-stopped
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
     environment:
       MYSQL_HOST: mysql
       MYSQL_PORT: 3306
@@ -78,7 +85,8 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
     environment:
       MYSQL_HOST: mysql
       MYSQL_PORT: 3306
@@ -87,6 +95,12 @@ services:
       MYSQL_DATABASE: monitoring_db
     networks:
       - monitoring-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   auth_server:
     build:
