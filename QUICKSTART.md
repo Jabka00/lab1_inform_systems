@@ -7,7 +7,7 @@ docker-compose up -d
 ```
 
 ###  Отримайте доступ до сервісів
-- **🔐 Авторизація**: http://localhost:5000 (admin/admin123 або user/user123)
+- ** Авторизація**: http://localhost:5001 (admin/admin123 або user/user123)
 - **Grafana**: http://localhost:3000 (через авторизацію)
 - **Prometheus**: http://localhost:9090 (через авторизацію)
 

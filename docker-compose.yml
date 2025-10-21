@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   mysql:
     image: mysql:8.0
@@ -97,7 +95,7 @@ services:
     container_name: auth_server
     restart: unless-stopped
     ports:
-      - "5000:5000"
+      - "5001:5000"
     environment:
       SECRET_KEY: "your-secret-key-change-in-production"
       JWT_SECRET: "your-jwt-secret-change-in-production"
